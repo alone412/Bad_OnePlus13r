@@ -270,17 +270,6 @@ runs:
         else
           echo "Kernel >= $MIN_VERSION, skipping ptrace patch"
         fi
-        if [ "${{ inputs.model }}" == "OPAce5Pro" ] || [ "${{ inputs.model }}" == "OP13" ] || [ "${{ inputs.model }}" == "OP13-GLO" ]; then
-          echo "Patching hmbird!"
-          echo 'obj-y += hmbird_patch.o' >> ./drivers/Makefile
-          patch -p1 -F 3 < "../../../kernel_patches/oneplus/hmbird/hmbird_kernel_patch.patch"
-          echo "Patching hmbird files!"
-          cd ./kernel/sched
-          rm -rf ext.c ext.h build_policy.c slim.h slim_sysctl.c
-          patch -p1 -F 3 < "../../../../../kernel_patches/oneplus/hmbird/hmbird_files_patch.patch"
-        else
-          echo "Not OPAce5Pro / OP13 / OP13-GLO , skipping fengchi patch"
-        fi
 
     - name: Apply KSUN Hooks
       shell: bash
@@ -446,6 +435,22 @@ runs:
         fi
         sha256sum "$IMG" | tee "$OUT/Image.sha256"
 
+    - name: Build Kernel Modules 
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PLATFORM/msm-kernel"
+        cd "$MSM"
+
+        INSTALL_MOD_PATH="$MSM/out"
+        
+        echo "Building kernel modules..."
+        make -j"$(nproc --all)" gki_defconfig 2>&1 | tee -a build.log
+        make -j"$(nproc --all)" modules 2>&1 | tee -a build.log
+        make -j"$(nproc --all)" modules_install INSTALL_MOD_PATH=$INSTALL_MOD_PATH 2>&1 | tee -a build.log
+
+
     - name: Collect Build Stats / Validate Image
       id: collect_stats
       shell: bash
@@ -476,7 +481,7 @@ runs:
         echo "warnings=$WARNINGS" >> "$GITHUB_OUTPUT"
         echo "image_sha256=$IMAGE_SHA256" >> "$GITHUB_OUTPUT"
 
-    - name: Create Kernel ZIP
+    - name: Create Kernel & Modules ZIP
       id: create_zip
       shell: bash
       run: |
@@ -492,12 +497,6 @@ runs:
         cp "$IMAGE_PATH" "$GITHUB_WORKSPACE/AnyKernel3/Image"
         cd "$GITHUB_WORKSPACE/AnyKernel3"
     
-        # Optional hmbird patch logic
-        if [ "${{ inputs.model }}" == "OPAce5Pro" ] || [ "${{ inputs.model }}" == "OP13" ] || [ "${{ inputs.model }}" == "OP13-GLO" ]; then
-          cp "$GITHUB_WORKSPACE/kernel_patches/oneplus/hmbird/bins/"* ./tools/ 2>/dev/null || true
-          patch -F 3 < "$GITHUB_WORKSPACE/kernel_patches/oneplus/hmbird/ak3_hmbird_patch.patch"
-        fi
-    
         ZIP_NAME="AnyKernel3_${{ inputs.model }}_${{ env.KERNEL_FULL_VER }}_Next_${KSUVER}_${SUSVER}.zip"
         ARTIFACTS_DIR="$CONFIG_DIR/artifacts"
         mkdir -p "$ARTIFACTS_DIR"
@@ -505,8 +504,14 @@ runs:
         echo "Creating flashable zip: $ZIP_NAME"
         ( cd "$GITHUB_WORKSPACE/AnyKernel3" && zip -r "$ARTIFACTS_DIR/$ZIP_NAME" ./* >/dev/null )
     
+        # Package all .ko files from msm-kernel/out into a separate zip
+        MODULES_SRC="$CONFIG_DIR/kernel_platform/msm-kernel/out"
+        MODULES_ZIP="$ARTIFACTS_DIR/kernel_modules_${{ inputs.model }}.zip"
+        find "$MODULES_SRC" -type f -name '*.ko' -print0 | xargs -0 zip -j "$MODULES_ZIP"
+        echo "Packaged kernel modules to $MODULES_ZIP"
+    
         # Keep only the flashable zip and the model metadata file (assumed already created earlier)
-        find "$ARTIFACTS_DIR" -maxdepth 1 -type f ! -name "$ZIP_NAME" ! -name "${{ inputs.model }}.txt" -delete
+        find "$ARTIFACTS_DIR" -maxdepth 1 -type f ! -name "$ZIP_NAME" ! -name "${{ inputs.model }}.txt" ! -name "$(basename "$MODULES_ZIP")" -delete
     
         # Output for later steps (optional)
         echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
