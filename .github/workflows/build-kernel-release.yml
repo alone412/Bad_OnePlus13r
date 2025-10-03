@@ -28,6 +28,11 @@ on:
           - O2
           - O3
         default: O2
+      build_only_modules:
+        description: 'Build only KernelSU Modules (no kernel image)'
+        required: true
+        type: boolean
+        default: false
       android12-5_10_susfs_branch_or_commit:
         description: 'Enter SusFS Branch or commit hash for android12-5.10'
         type: string
@@ -116,6 +121,7 @@ jobs:
           ksun_branch: ${{ inputs.ksun_branch }}
           susfs_commit_hash_or_branch: ${{ steps.get-susfs-branch.outputs.susfs_branch }}
           optimize_level: ${{ inputs.optimize_level }}
+          build_only_modules: ${{ inputs.build_only_modules }}
 
 
   trigger-release:
@@ -135,6 +141,7 @@ jobs:
           fetch-depth: 0
           
       - name: Generate and Create New Tag
+        if: ${{ inputs.build_only_modules == 'false' }}
         run: |
           BASE_TAG="v1.5.10-r0"
           LATEST_TAG=$(gh api repos/$REPO_OWNER/$REPO_NAME/tags --jq '.[0].name')
