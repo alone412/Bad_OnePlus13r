@@ -447,9 +447,10 @@ runs:
         INSTALL_MOD_PATH="$MSM/out"
         
         echo "Building kernel modules..."
-        make -j"$(nproc --all)" gki_defconfig 2>&1 | tee -a build.log
-        make -j"$(nproc --all)" modules 2>&1 | tee -a build.log
-        make -j"$(nproc --all)" modules_install INSTALL_MOD_PATH=$INSTALL_MOD_PATH 2>&1 | tee -a build.log
+        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out gki_defconfig
+        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out Image
+        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out modules
+        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out INSTALL_MOD_PATH=$KERNEL_PLATFORM/msm-kernel/out modules_install
 
 
     - name: Collect Build Stats / Validate Image
