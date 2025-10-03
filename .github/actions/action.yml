@@ -391,7 +391,7 @@ runs:
         echo "CLANG_VERSION=$CLANG_VERSION" >> "$GITHUB_ENV"
         echo "Detected Clang: $CLANG_VERSION"
 
-    - name: Build Kernel
+    - name: Build Common Kernel
       shell: bash
       run: |
         set -euo pipefail
@@ -436,22 +436,119 @@ runs:
         fi
         sha256sum "$IMG" | tee "$OUT/Image.sha256"
 
+    - name: Add nethunter specfic drivers already present in kernel to be built as modules
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PATH/msm-kernel"
+        cd "$MSM"
+        cat >> arch/arm64/configs/gki_defconfig <<EOF
+
+        CONFIG_WLAN_VENDOR_REALTEK=y
+
+        CONFIG_WLAN_VENDOR_ATH=y
+        CONFIG_ATH_COMMON=m
+        
+        CONFIG_ATH9K=m
+        CONFIG_ATH9K_HW=m
+        CONFIG_ATH9K_HTC=m
+        CONFIG_ATH9K_COMMON=m
+
+        CONFIG_ATH10K=m
+        CONFIG_ATH10K_USB=m
+
+        CONFIG_ATH11K=m
+
+        CONFIG_WLAN_VENDOR_MEDIATEK=y
+        
+        CONFIG_MT7601U=m
+        CONFIG_MT76_CORE=m
+
+        CONFIG_MT76_CORE=m
+        CONFIG_MT76_USB=m
+        CONFIG_MT76x02_LIB=m
+        CONFIG_MT76x02_USB=m
+        CONFIG_MT76_CONNAC_LIB=m
+
+        CONFIG_MT7603E=m
+        CONFIG_MT76x2_COMMON=m
+        CONFIG_MT76x0_COMMON=m
+        CONFIG_MT7615_COMMON=m
+        CONFIG_MT7915E=m
+        CONFIG_MT7921E=m
+
+        CONFIG_USB_AIRSPY=m
+        CONFIG_USB_HACKRF=m
+        EOF
+
+    - name: Add rtw88 modules
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PATH="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PATH/msm-kernel"
+        cd "$MSM/drivers/net/wireless/realtek/"
+        rm -rf rtw88
+        git clone https://github.com/lwfinger/rtw88.git
+        sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
+
     - name: Build Kernel Modules 
       shell: bash
       run: |
         set -euo pipefail
         KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+
+        export CLANG_BIN_PATH="$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin"
+        export PATH="$CLANG_BIN_PATH:$PATH"  
+        
         MSM="$KERNEL_PLATFORM/msm-kernel"
         cd "$MSM"
+
+        # Merge defconfig fragments from vendor/kalama_GKI.config
+        cat arch/arm64/configs/vendor/kalama_GKI.config >> ./arch/arm64/configs/gki_defconfig
+
+        # Thin LTO
+        echo "CONFIG_LTO_CLANG_THIN=y" >> ./arch/arm64/configs/gki_defconfig                                                                            
+        echo "CONFIG_LTO_CLANG=y" >> ./arch/arm64/configs/gki_defconfig
+        echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y" >> "./arch/arm64/configs/gki_defconfig"
+        echo "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=n" >> "./arch/arm64/configs/gki_defconfig"
 
         INSTALL_MOD_PATH="$MSM/out"
         
         echo "Building kernel modules..."
-        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out gki_defconfig
-        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out Image
-        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out modules
-        make ARCH=arm64 LLVM=$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin/ O=out INSTALL_MOD_PATH=$KERNEL_PLATFORM/msm-kernel/out modules_install
+        make ARCH=arm64 LLVM=1 O=out gki_defconfig   
+        make -j$(nproc --all) ARCH=arm64 LLVM=1 O=out modules       
+        make -j$(nproc --all) ARCH=arm64 LLVM=1 O=out INSTALL_MOD_PATH=$INSTALL_MOD_PATH modules_install
 
+    - name: Filter modules
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PLATFORM/msm-kernel"
+        OUT="$MSM/out"
+        UNAME=$(ls "$OUT/lib/modules/")
+
+        echo "Copying all modules to $OUT/modules"
+        cd "$OUT"
+        mkdir -p modules
+        find lib/modules/"$UNAME" -type f -name '*.ko' -exec cp {} modules/ \;
+        echo "Total modules copied: $(find modules -type f -name '*.ko' | wc -l)"
+
+        echo "Removing unnecessary modules..."
+        # Download default module list
+        curl -L -o default_modules.txt https://raw.githubusercontent.com/0x-br0k3n/nh_kernel_patches/refs/heads/main/default_modules.txt
+        # Remove modules in the default list
+        cd modules
+        while read -r mod; do
+          if [ -f "$mod" ]; then
+            rm -f "$mod"
+            echo "Removed default module: $mod"
+          fi
+        done < ../default_modules.txt
+        cd ..
+        echo "Modules remaining after filtering: $(find modules -type f -name '*.ko' | wc -l)"
 
     - name: Collect Build Stats / Validate Image
       id: collect_stats
@@ -507,7 +604,7 @@ runs:
         ( cd "$GITHUB_WORKSPACE/AnyKernel3" && zip -r "$ARTIFACTS_DIR/$ZIP_NAME" ./* >/dev/null )
     
         # Package all .ko files from msm-kernel/out into a separate zip
-        MODULES_SRC="$CONFIG_DIR/kernel_platform/msm-kernel/out"
+        MODULES_SRC="$CONFIG_DIR/kernel_platform/msm-kernel/out/modules"
         MODULES_ZIP="$ARTIFACTS_DIR/kernel_modules_${{ inputs.model }}.zip"
         find "$MODULES_SRC" -type f -name '*.ko' -print0 | xargs -0 zip -j "$MODULES_ZIP"
         echo "Packaged kernel modules to $MODULES_ZIP"
