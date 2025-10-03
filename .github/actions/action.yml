@@ -461,7 +461,7 @@ runs:
         CONFIG_ATH11K=m
 
         CONFIG_WLAN_VENDOR_MEDIATEK=y
-        
+
         CONFIG_MT7601U=m
         CONFIG_MT76_CORE=m
 
@@ -492,6 +492,7 @@ runs:
         rm -rf rtw88
         git clone https://github.com/lwfinger/rtw88.git
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
+        sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
 
     - name: Build Kernel Modules 
       shell: bash
