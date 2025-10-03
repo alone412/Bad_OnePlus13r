@@ -29,7 +29,7 @@ on:
           - O3
         default: O2
       build_only_modules:
-        description: 'Build only KernelSU Modules (no kernel image)'
+        description: 'Build only Kernel Modules (no kernel image)'
         required: true
         type: boolean
         default: false
