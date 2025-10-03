@@ -1,4 +1,4 @@
-# Wild Kernels for Android
+# Wild+×br0k3n Kernels for Android
 
 ## Your warranty is no longer valid!
 
@@ -10,42 +10,14 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 
 ---
 
-### Proceed at your own risk!
-
-<table>
-  <tr>
-    <th> :warning: </th>
-    <th> Verify <a href="https://github.com/WildKernels/OnePlus_KernelSU_SUSFS/blob/main/compatibility.md">Compatibility</a> of kernels before flashing. </th>
-  </tr>
-</table>
-
----
-
-# Kernels:
- 
-[GKI](https://github.com/WildKernels/GKI_KernelSU_SUSFS)  
-[Sultan](https://github.com/WildKernels/Sultan_KernelSU_SUSFS)  
-[OnePlus](https://github.com/WildKernels/OnePlus_KernelSU_SUSFS)  
-[Legacy Pixels](https://github.com/WildKernels/Pixel_KernelSU_SUSFS)  
-
----
-
 # Other Links:
 
-[Kernel Patches](https://github.com/WildKernels/kernel_patches)  
-[Old Build Scripts](https://github.com/TheWildJames/kernel_build_scripts)  
-[Kernel Flasher - fatalcoder524 fork](https://github.com/fatalcoder524/KernelFlasher)  
-[Horizon Kernel Flasher](https://github.com/libxzr/HorizonKernelFlasher)  
-
+[Kernel Flasher - fatalcoder524 fork](https://github.com/fatalcoder524/KernelFlasher)
 ---
 
 # Installation instructions: 
 
-Follow the steps for GKI:  
-[Installation](https://kernelsu.org/guide/installation.html)
-
-To get boot.img format:  
-[Get My Kernel Format](https://github.com/TheWildJames/Get_My_Kernel_Format)
+Flash AK3 zip in kernel flasher
 
 ---
 
@@ -64,6 +36,7 @@ To get boot.img format:
 - **SUSFS**: Developed by [simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git).
 - **SUSFS Module**: Developed by [sidex15](https://github.com/sidex15).
 - **Sultan Kernels**: Developed by [kerneltoast](https://github.com/kerneltoast).
+- **Kernel Flasher**: Developed by [fatalcoder524](https://github.com/fatalcoder524)
 
 Special thanks to the open-source community for their contributions!
 
@@ -82,17 +55,5 @@ Flashing this kernel will void your warranty, and there is always a risk of bric
 **Proceed at your own risk!**
 
 ---
-
-[Telegram](https://t.me/TheWildJames)  
-[Telegram Group](https://t.me/WildKernels)  
-
-# Special thanks to the following people for their contributions!
-This helps me alot! <3
-
-[simonpunk](https://gitlab.com/simonpunk/susfs4ksu.git) - Created SUSFS!  
-[sidex15](https://github.com/sidex15) - Created module!  
-[backslashxx](https://github.com/backslashxx) - Helped with patches!  
-[Teemo](https://github.com/liqideqq) - Helped with patches!  
-[幕落](https://github.com/MuLuo688) - Donation!
 
 If you have contributed and are not here please remind me!
