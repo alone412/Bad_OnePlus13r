@@ -28,39 +28,18 @@ on:
           - O2
           - O3
         default: O2
-      build_only_modules:
+      kernel_uname:
         description: 'Build only Kernel Modules (no kernel image)'
-        required: true
-        type: boolean
-        default: false
-      android12-5_10_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android12-5.10'
         type: string
-        default: ''
-      android13-5_10_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android13-5.10'
-        type: string
-        default: ''
+        default: 'Wild+×br0k3n'
       android13-5_15_susfs_branch_or_commit:
         description: 'Enter SusFS Branch or commit hash for android13-5.15'
         type: string
         default: ''
-      android14-5_15_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android14-5.15'
-        type: string
-        default: ''
-      android14-6_1_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android14-6.1'
-        type: string
-        default: ''
-      android15-6_6_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android15-6.6'
-        type: string
-        default: ''
 
 jobs:
-  build-batch-1:
-    name: build-batch-1 (${{ matrix.model }}, ${{ matrix.soc }}, ${{ matrix.branch }}, ${{ matrix.manifest }}, ${{ matrix.android_version }}, ${{ matrix.kernel_version }}, ${{ inputs.ksun_branch }})
+  build-kernel:
+    name: Build Kernel
     strategy:
       fail-fast: false
       matrix:
@@ -78,32 +57,8 @@ jobs:
         id: get-susfs-branch
         run: |
           KERNEL_STRING="${{ matrix.android_version }}-${{ matrix.kernel_version }}"
-          SUSFS_BRANCH=""
-          case "$KERNEL_STRING" in
-            "android12-5.10")
-              SUSFS_BRANCH="${{ inputs.android12-5_10_susfs_branch_or_commit }}"
-              ;;
-            "android13-5.10")
-              SUSFS_BRANCH="${{ inputs.android13-5_10_susfs_branch_or_commit }}"
-              ;;
-            "android13-5.15")
-              SUSFS_BRANCH="${{ inputs.android13-5_15_susfs_branch_or_commit }}"
-              ;;
-            "android14-5.15")
-              SUSFS_BRANCH="${{ inputs.android14-5_15_susfs_branch_or_commit }}"
-              ;;
-            "android14-6.1")
-              SUSFS_BRANCH="${{ inputs.android14-6_1_susfs_branch_or_commit }}"
-              ;;
-            "android15-6.6")
-              SUSFS_BRANCH="${{ inputs.android15-6_6_susfs_branch_or_commit }}"
-              ;;
-            *)
-              echo "Invalid kernel version or unsupported: $KERNEL_STRING"
-              exit 1
-              ;;
-          esac
-
+          SUSFS_BRANCH="${{ inputs.android13-5_15_susfs_branch_or_commit }}"
+      
           echo "susfs_branch=$SUSFS_BRANCH" >> $GITHUB_OUTPUT
 
       - name: Checkout Code
@@ -121,12 +76,40 @@ jobs:
           ksun_branch: ${{ inputs.ksun_branch }}
           susfs_commit_hash_or_branch: ${{ steps.get-susfs-branch.outputs.susfs_branch }}
           optimize_level: ${{ inputs.optimize_level }}
-          build_only_modules: ${{ inputs.build_only_modules }}
+          kernel_uname: ${{ inputs.kernel_uname }}
+          
+  build-kernel-modules:
+    name: Build Kernel Modules
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - model: OP11
+            soc: kalama
+            branch: oneplus/sm8550
+            manifest: oneplus_11_v.xml
+            android_version: android13
+            kernel_version: '5.15'
+            
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
+      - name: Build Kernel Modules
+        uses: ./.github/kernel_modules
+        with:
+          model: ${{ matrix.model }}
+          soc: ${{ matrix.soc }}
+          branch: ${{ matrix.branch }}
+          manifest: ${{ matrix.manifest }}
 
   trigger-release:
     needs:
-      - build-batch-1
+      - build-kernel
+      - build-kernel-modules
     runs-on: ubuntu-latest
     if: ${{ inputs.make_release }}
     env:
@@ -141,7 +124,6 @@ jobs:
           fetch-depth: 0
           
       - name: Generate and Create New Tag
-        if: ${{ inputs.build_only_modules == 'false' }}
         run: |
           BASE_TAG="v1.5.10-r0"
           LATEST_TAG=$(gh api repos/$REPO_OWNER/$REPO_NAME/tags --jq '.[0].name')
@@ -205,6 +187,7 @@ jobs:
           - [+] CONFIG_TMPFS_XATTR Support [Mountify Support]
           - [+] BBR v1 Support
           - [+] Baseband Guard Support (BBG).
+          - [+] Nethunter Support
           EOF
           
           # Output for debugging
