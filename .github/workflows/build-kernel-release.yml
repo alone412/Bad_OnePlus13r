@@ -120,6 +120,38 @@ jobs:
         with:
           fetch-depth: 0
           
+      - name: Download Wirless Firmware Module for Nethunter 
+        id: download_external
+        env:
+          SOURCE_REPO: 0x-br0k3n/Nethunter-Wireless-Firmware 
+        run: |
+          echo "--- Downloading Latest Release Asset from $SOURCE_REPO ---"
+          
+          DOWNLOAD_DIR="./downloaded-artifacts/wireless-firmware"
+          mkdir -p "$DOWNLOAD_DIR"
+          
+          LATEST_RELEASE_TAG=$(gh api \
+            repos/$SOURCE_REPO/releases/latest \
+            --jq '.tag_name')
+
+          if [ -z "$LATEST_RELEASE_TAG" ]; then
+            echo "::warning::Could not find a latest release in $SOURCE_REPO. Skipping external download."
+            exit 0
+          fi
+          
+          echo "Found latest release tag: $LATEST_RELEASE_TAG"
+          
+          SOURCE_REPO_NAME=$(basename $SOURCE_REPO)
+          EXPECTED_ASSET_NAME="${SOURCE_REPO_NAME}-${LATEST_RELEASE_TAG}.zip"
+
+          gh release download $LATEST_RELEASE_TAG \
+            --repo $SOURCE_REPO \
+            --pattern $EXPECTED_ASSET_NAME \
+            --dir $DOWNLOAD_DIR \
+            --clobber
+          
+          echo "Finished downloading $EXPECTED_ASSET_NAME to $DOWNLOAD_DIR."
+
       - name: Generate and Create New Tag
         run: |
           BASE_TAG="v1.5.11-r0"
@@ -134,12 +166,13 @@ jobs:
           echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
           git tag $NEW_TAG
           git push origin $NEW_TAG
-
+          
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./downloaded-artifacts
-
+          
+      
       - name: Generate Device List and Final Release Notes
         id: generate-notes
         run: |
