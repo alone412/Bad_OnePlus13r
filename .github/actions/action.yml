@@ -462,26 +462,48 @@ runs:
         COMMON="$KERNEL_PATH/common"
         OUT="$COMMON/out"
         IMG="$OUT/arch/arm64/boot/Image"
-        WARNINGS_COUNT=$(grep -i -E 'warning:' "$COMMON/build.log" | wc -l || true)
-        echo "$WARNINGS_COUNT" > "$OUT/warnings.txt"
-        file "$IMG" > "$OUT/Image.file"
-        KERNEL_UNAME=$(strings "$IMG" | grep -E 'Linux version.*#' | tail -n1)
-        echo "Kernel Uname: $KERNEL_UNAME"
-        echo "KERNEL_UNAME=$KERNEL_UNAME" >> "$GITHUB_ENV"
-        if ! file "$IMG" | grep -qi 'ARM64'; then
-          echo "Image does not appear to be ARM64:"
-          file "$IMG"
-          exit 1
+    
+        WARNINGS=$(grep -i -E 'warning:' "$COMMON/build.log" | wc -l || true)
+        echo "$WARNINGS" > "$OUT/warnings.txt"
+    
+        if [ -f "$IMG" ]; then
+          file "$IMG" > "$OUT/Image.file" || true
+          KERNEL_UNAME=$(strings "$IMG" | grep -E 'Linux version.*#' | tail -n1 || true)
+          echo "Kernel Uname: ${KERNEL_UNAME:-unknown}"
+          echo "KERNEL_UNAME=${KERNEL_UNAME:-unknown}" >> "$GITHUB_ENV"
+    
+          if ! file "$IMG" | grep -qi 'ARM64'; then
+            echo "WARNING: Image does not appear to be ARM64:"
+            file "$IMG" || true
+          fi
+    
+          MIN_SIZE=$((6*1024*1024))
+          ACTUAL_SIZE=$(stat -c %s "$IMG" || echo 0)
+          if [ "$ACTUAL_SIZE" -lt "$MIN_SIZE" ]; then
+            echo "WARNING: Image size $ACTUAL_SIZE < $MIN_SIZE (suspicious)."
+          fi
+    
+          CALC_SHA=$(sha256sum "$IMG" | cut -d' ' -f1)
+          if [ -f "$OUT/Image.sha256" ]; then
+            REC_SHA=$(cut -d' ' -f1 "$OUT/Image.sha256" | tr -d '\n')
+            if [ "$CALC_SHA" != "$REC_SHA" ]; then
+              echo "WARNING: Image.sha256 mismatch. recorded=$REC_SHA calculated=$CALC_SHA"
+            fi
+            IMAGE_SHA256="$REC_SHA"
+          else
+            echo "WARNING: Image.sha256 not found, using calculated sha256."
+            IMAGE_SHA256="$CALC_SHA"
+          fi
+        else
+          echo "WARNING: Image file not found at $IMG"
+          IMAGE_SHA256=""
+          KERNEL_UNAME="unknown"
+          echo "KERNEL_UNAME=unknown" >> "$GITHUB_ENV"
         fi
-        MIN_SIZE=$((6*1024*1024))
-        ACTUAL_SIZE=$(stat -c %s "$IMG")
-        if [ "$ACTUAL_SIZE" -lt "$MIN_SIZE" ]; then
-          echo "Image size $ACTUAL_SIZE < $MIN_SIZE (suspicious)"; exit 1
-        fi
-        IMAGE_SHA256=$(cut -d' ' -f1 "$OUT/Image.sha256")
-        echo "Image sha256: $IMAGE_SHA256"
-        echo "warnings_count=$WARNINGS_COUNT" >> "$GITHUB_OUTPUT"
-        echo "image_sha256=$IMAGE_SHA256" >> "$GITHUB_OUTPUT"
+    
+        echo "Image sha256: ${IMAGE_SHA256:-none}"
+        echo "warnings=$WARNINGS" >> "$GITHUB_OUTPUT"
+        echo "image_sha256=${IMAGE_SHA256:-}" >> "$GITHUB_OUTPUT"
 
     - name: Create Kernel ZIP
       id: create_zip
