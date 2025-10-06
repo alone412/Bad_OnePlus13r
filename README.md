@@ -1,16 +1,17 @@
 # EmberHeart Kernel for OnePlus 11
 
-## Your warranty is no longer valid!
+### Your warranty is no longer valid!
 
 I am not responsible for bricked devices, dead SD cards, thermonuclear war, or the current economic crisis. Please do some research if you have any concerns about features included in this kernel before flashing it! YOU are choosing to make these modifications, and if you point your finger at me for messing up your device, I will laugh at you.
+
 ---
 
-# Other Links:
+## Other Links:
 
 [Kernel Flasher - fatalcoder524 fork](https://github.com/fatalcoder524/KernelFlasher)
 ---
 
-# Installation instructions: 
+## Installation instructions: 
 
 - Flash AK3 zip in kernel flasher
 - Flash Wireless Firmware for Nethunter provided in the releases 
@@ -18,34 +19,35 @@ I am not responsible for bricked devices, dead SD cards, thermonuclear war, or t
 
 ---
 
-# Loading rtw88 drivers
+## Loading rtw88 drivers
 
-If you have unzipped all the drivers inside lets say Documents folder of internal storage and want to load drivers for let's say rtl8821au chipset,
+If you have unzipped all the drivers in internal storage and want to load drivers for let's say rtl8821au chipset,
 
-Step 0: cd into the directly where all kernel modules are placed 
-Step 1: `rmmod mac80211`
-Step 2: `insmod mac80211.ko`
+- Step 0: cd into the directory where all kernel modules are unzipped 
+- Step 1: `rmmod mac80211`
+- Step 2: `insmod mac80211.ko`
 
-[!WARNING] the first two steps are necessary otherwise you'll get unknown symbol error
+> [!WARNING] 
+> The first two steps are necessary otherwise you'll get unknown symbol error (__ieee80211_create_tpt_led_trigger) 
 
-Step 2: `insmod rtw_core.ko`
-Step 3: `insmod rtw_usb.ko`
-Step 4: `insmod rtw_88xxa.ko`
-Step 5: `insmod rtw_8821a.ko`
-Step 6: `insmod rtw_8821au.ko`
+- Step 2: `insmod rtw_core.ko`
+- Step 3: `insmod rtw_usb.ko`
+- Step 4: `insmod rtw_88xxa.ko`
+- Step 5: `insmod rtw_8821a.ko`
+- Step 6: `insmod rtw_8821au.ko`
 
 Tested wifi adaptors : [TP-Link Archer T2U Plus](https://amzn.in/d/76Ka5nB)
 
 ---
 
-# Features
+## Features
 
 - **KernelSU**: KernelSU is a root solution for Android GKI devices, it works in kernel mode and grants root permission to userspace applications directly in kernel space.
 - **SUSFS**: An addon root hiding kernel patches and userspace module for KernelSU.
 - **Nethunter**: Open-source Android penetration testing platform for Android devices,
 ---
 
-# Credits
+## Credits
 
 - **KernelSU**: Developed by [tiann](https://github.com/tiann/KernelSU).
 - **KernelSU-Next**: Developed by [rifsxd](https://github.com/KernelSU-Next/KernelSU-Next).
@@ -59,13 +61,13 @@ Special thanks to the open-source community for their contributions!
 
 ---
 
-# Support
+## Support
 
 If you encounter any issues or need help, feel free to open an issue in this repository or reach out to me.
 
 ---
 
-# Disclaimer
+## Disclaimer
 
 Flashing this kernel will void your warranty, and there is always a risk of bricking your device. Please make sure to back up your data and ensure you understand the risks before proceeding.
 
