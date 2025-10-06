@@ -1,4 +1,4 @@
-name: Build and Release OnePlus Kernels
+name: Build and Release OnePlus 11 EmberHeart Kernel and Kernel Modules
 
 permissions:
   contents: write
@@ -7,11 +7,15 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      make_release:
-        description: 'Do you want to create a release?'
+      release_type:
+        description: 'Select type of Github release?'
         required: true
-        type: boolean
-        default: false
+        type: choice
+        options:
+          - none
+          - Pre-release
+          - Release
+        default: none
       ksun_branch:
         description: 'Enter KernelSU Next Branch or commit hash (blank for stable tag)'
         required: true
@@ -26,9 +30,9 @@ on:
           - O3
         default: O2
       kernel_uname:
-        description: 'Build only Kernel Modules (no kernel image)'
+        description: 'Kernel uname'
         type: string
-        default: 'Wild+×br0k3n'
+        default: 'EmberHeart'
       android13-5_15_susfs_branch_or_commit:
         description: 'Enter SusFS Branch or commit hash for android13-5.15'
         type: string
@@ -108,12 +112,12 @@ jobs:
       - build-kernel
       - build-kernel-modules
     runs-on: ubuntu-latest
-    if: ${{ inputs.make_release }}
+    if: ${{ inputs.release_type != 'none' }}
     env:
       REPO_OWNER: ${{ github.repository_owner }}
       REPO_NAME: ${{ github.event.repository.name }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      RELEASE_NAME: '*TEST BUILD* OnePlus Kernels With KernelSU Next & SUSFS v1.5.10 *TEST BUILD*'
+      RELEASE_NAME: 'OnePlus 11 EmberHeart Kernel With KernelSU Next, Nethunter & SUSFS v1.5.11'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -224,13 +228,22 @@ jobs:
           echo "--- Final Release Notes ---"
           cat release_notes.md
 
+      - name: Create GitHub Pre-release
+        ${{ inputs.release_type != 'Pre-release' }}
+        run: |
+          gh release create "${{ env.NEW_TAG }}" \
+            --repo "${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}" \
+            --title "*Test-build*-${{ env.RELEASE_NAME }}-*Test Build*" \
+            --notes-file release_notes.md \
+            --prerelease
+       
       - name: Create GitHub Release
+        ${{ inputs.release_type != 'Release' }}
         run: |
           gh release create "${{ env.NEW_TAG }}" \
             --repo "${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}" \
             --title "${{ env.RELEASE_NAME }}" \
-            --notes-file release_notes.md \
-            --prerelease
+            --notes-file release_notes.md
 
       - name: Upload Release Assets Dynamically
         run: |

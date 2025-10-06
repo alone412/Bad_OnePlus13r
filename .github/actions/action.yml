@@ -1,4 +1,4 @@
-name: Build and Release OnePlus Kernels
+name: Build OnePlus 11 EmberHeart Kernel
 
 permissions:
   contents: write
@@ -32,7 +32,7 @@ inputs:
   kernel_uname:
     required: false
     type: string
-    default: "Wild+×br0k3n"
+    default: "EmberHeart"
 
 outputs:
   kernel_version:

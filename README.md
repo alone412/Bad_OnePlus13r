@@ -1,13 +1,8 @@
-# Wild+×br0k3n Kernels for Android
+# EmberHeart Kernel for OnePlus 11
 
 ## Your warranty is no longer valid!
 
-I am **not responsible** for bricked devices, damaged hardware, or any issues that arise from using this kernel.
-
-**Please** do thorough research and fully understand the features included in this kernel before flashing it!
-
-By flashing this kernel, **YOU** are choosing to make these modifications. If something goes wrong, **do not blame me**!
-
+I am not responsible for bricked devices, dead SD cards, thermonuclear war, or the current economic crisis. Please do some research if you have any concerns about features included in this kernel before flashing it! YOU are choosing to make these modifications, and if you point your finger at me for messing up your device, I will laugh at you.
 ---
 
 # Other Links:
@@ -17,7 +12,29 @@ By flashing this kernel, **YOU** are choosing to make these modifications. If so
 
 # Installation instructions: 
 
-Flash AK3 zip in kernel flasher
+- Flash AK3 zip in kernel flasher
+- Flash Wireless Firmware for Nethunter provided in the releases 
+- Download and Unzip kernel modules in internal storage and load them using `insmod module_name.ko`
+
+---
+
+# Loading rtw88 drivers
+
+If you have unzipped all the drivers inside lets say Documents folder of internal storage and want to load drivers for let's say rtl8821au chipset,
+
+Step 0: cd into the directly where all kernel modules are placed 
+Step 1: `rmmod mac80211`
+Step 2: `insmod mac80211.ko`
+
+[!WARNING] the first two steps are necessary otherwise you'll get unknown symbol error
+
+Step 2: `insmod rtw_core.ko`
+Step 3: `insmod rtw_usb.ko`
+Step 4: `insmod rtw_88xxa.ko`
+Step 5: `insmod rtw_8821a.ko`
+Step 6: `insmod rtw_8821au.ko`
+
+Tested wifi adaptors : [TP-Link Archer T2U Plus](https://amzn.in/d/76Ka5nB)
 
 ---
 
@@ -25,7 +42,7 @@ Flash AK3 zip in kernel flasher
 
 - **KernelSU**: KernelSU is a root solution for Android GKI devices, it works in kernel mode and grants root permission to userspace applications directly in kernel space.
 - **SUSFS**: An addon root hiding kernel patches and userspace module for KernelSU.
-
+- **Nethunter**: Open-source Android penetration testing platform for Android devices,
 ---
 
 # Credits
