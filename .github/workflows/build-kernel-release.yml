@@ -229,7 +229,7 @@ jobs:
           cat release_notes.md
 
       - name: Create GitHub Pre-release
-        if: ${{ inputs.release_type != 'Pre-release' }}
+        if: ${{ inputs.release_type == 'Pre-release' }}
         run: |
           gh release create "${{ env.NEW_TAG }}" \
             --repo "${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}" \
@@ -238,7 +238,7 @@ jobs:
             --prerelease
        
       - name: Create GitHub Release
-        if: ${{ inputs.release_type != 'Release' }}
+        if: ${{ inputs.release_type == 'Release' }}
         run: |
           gh release create "${{ env.NEW_TAG }}" \
             --repo "${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}" \
