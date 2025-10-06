@@ -167,7 +167,7 @@ runs:
       run: |
         set -euo pipefail
         KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
-        OUT=out
+
         export CLANG_BIN_PATH="$KERNEL_PLATFORM/prebuilts/clang/host/linux-x86/clang-r450784e/bin"
         export PATH="$CLANG_BIN_PATH:$PATH"  
         
@@ -186,20 +186,9 @@ runs:
         INSTALL_MOD_PATH="$MSM/out"
         
         echo "Building kernel modules..."
-        make ARCH=arm64 LLVM=1 O=out gki_defconfig
-        if [ "${{ inputs.optimize_level }}" = "O3" ]; then
-          scripts/config --file "$OUT/.config" -d CC_OPTIMIZE_FOR_PERFORMANCE
-          scripts/config --file "$OUT/.config" -e CC_OPTIMIZE_FOR_PERFORMANCE_O3
-          export KCFLAGS="-Wno-error -pipe -O3 -fno-stack-protector"
-        else
-          scripts/config --file "$OUT/.config" -e CC_OPTIMIZE_FOR_PERFORMANCE
-          scripts/config --file "$OUT/.config" -d CC_OPTIMIZE_FOR_PERFORMANCE_O3
-          export KCFLAGS="-Wno-error -pipe -O2 -fno-stack-protector"
-        fi
-        export KCPPFLAGS="-DCONFIG_OPTIMIZE_INLINING"
-        make O="$OUT" olddefconfig
-        make -j$(nproc --all) ARCH=arm64 LLVM=1 O="$OUT" modules       
-        make -j$(nproc --all) ARCH=arm64 LLVM=1 O="$OUT" INSTALL_MOD_PATH=$INSTALL_MOD_PATH modules_install
+        make ARCH=arm64 LLVM=1 O=out gki_defconfig   
+        make -j$(nproc --all) ARCH=arm64 LLVM=1 O=out modules       
+        make -j$(nproc --all) ARCH=arm64 LLVM=1 O=out INSTALL_MOD_PATH=$INSTALL_MOD_PATH modules_install
 
     - name: Filter modules
       shell: bash
