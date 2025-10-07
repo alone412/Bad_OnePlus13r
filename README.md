@@ -1,4 +1,5 @@
-# EmberHeart Kernel for OnePlus 11
+![Banner](svgs/emberheart_light.svg#gh-light-mode-only)
+![Banner](svgs/emberheart_dark.svg#gh-dark-mode-only)
 
 ### Your warranty is no longer valid!
 
