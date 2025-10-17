@@ -220,7 +220,6 @@ jobs:
           - [+] BBR v1 Support
           - [+] Baseband Guard Support (BBG)
           - [+] Nethunter Support
-          - [+] xx_maps hide
           - [+] Mem kernel driver by @Poko-Apps [r/w to physical memory]
           
           EOF
