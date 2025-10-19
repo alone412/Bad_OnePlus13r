@@ -221,7 +221,8 @@ jobs:
           - [+] Baseband Guard Support (BBG)
           - [+] Nethunter Support
           - [+] Mem kernel driver by @Poko-Apps [r/w to physical memory]
-          
+          - [+] IP Set Support
+
           EOF
           
           # Output for debugging
