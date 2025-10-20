@@ -37,19 +37,65 @@ on:
         default: ''
 
 jobs:
+  set-op-model:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Code (to access configs/)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            configs/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup OnePlus Model
+        id: set-matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          declare -a models=()
+          while IFS= read -r -d '' file; do
+            model=$(basename "$file" .json)
+            models+=("$model")
+          done < <(find configs/ -name "*.json" -print0)
+        
+          if [ ${#models[@]} -eq 0 ]; then
+            echo "Error: No config files found in configs/ directory!"
+            exit 1
+          fi
+        
+          echo "[" > matrix.json
+          for i in "${!models[@]}"; do
+            model="${models[$i]}"
+            file="configs/$model.json"
+            if [ -f "$file" ]; then
+              jq -r '.' "$file" >> matrix.json
+              if [ $((i+1)) -lt ${#models[@]} ]; then
+                echo "," >> matrix.json
+              fi
+            fi
+          done
+          echo "]" >> matrix.json
+        
+          input="OP11"
+          jq_filter="."
+          jq_filter="map(select(.model == \"$input\"))"
+        
+          filtered=$(jq -c "$jq_filter" matrix.json)
+          wrapped=$(jq -n --argjson items "$filtered" '{ include: $items }')
+        
+          echo "matrix<<MATRIX_EOF" >> "$GITHUB_OUTPUT"
+          echo "$wrapped" >> "$GITHUB_OUTPUT"
+          echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
+
   build-kernel:
-    name: Build Kernel
+    name: Build OP11 EmberHeart kernel
+    needs: set-op-model
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - model: OP11
-            soc: kalama
-            branch: oneplus/sm8550
-            manifest: oneplus_11_v.xml
-            android_version: android13
-            kernel_version: '5.15'          
-    runs-on: ubuntu-latest
+      matrix: ${{ fromJSON(needs.set-op-model.outputs.matrix) }}
     steps:
       - name: Resolve SUSFS branch from inputs
         id: susfs
@@ -68,10 +114,7 @@ jobs:
       - name: Build Kernel
         uses: ./.github/actions
         with:
-          model: ${{ matrix.model }}
-          soc: ${{ matrix.soc }}
-          branch: ${{ matrix.branch }}
-          manifest: ${{ matrix.manifest }}
+          op_config_json: ${{ toJSON(matrix) }}
           ksun_branch: ${{ inputs.ksun_branch }}
           susfs_commit_hash_or_branch: ${{ steps.get-susfs-branch.outputs.susfs_branch }}
           optimize_level: ${{ inputs.optimize_level }}
@@ -79,18 +122,11 @@ jobs:
           
   build-kernel-modules:
     name: Build Kernel Modules
+    needs: set-op-model
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - model: OP11
-            soc: kalama
-            branch: oneplus/sm8550
-            manifest: oneplus_11_v.xml
-            android_version: android13
-            kernel_version: '5.15'
-            
-    runs-on: ubuntu-latest
+      matrix: ${{ fromJSON(needs.set-op-model.outputs.matrix) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -100,10 +136,7 @@ jobs:
       - name: Build Kernel Modules
         uses: ./.github/kernel_modules
         with:
-          model: ${{ matrix.model }}
-          soc: ${{ matrix.soc }}
-          branch: ${{ matrix.branch }}
-          manifest: ${{ matrix.manifest }}
+          op_config_json: ${{ toJSON(matrix) }}
 
   trigger-release:
     needs:
