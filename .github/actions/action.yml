@@ -679,6 +679,8 @@ runs:
         # Output for later steps (optional)
         echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
         
+        rm -rf $ARTIFACTS_DIR/*.txt
+        
     - name: Upload Boot Image
       if: success() && steps.create_zip.conclusion == 'success'
       shell: bash
