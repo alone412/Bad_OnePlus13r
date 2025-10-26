@@ -185,6 +185,10 @@ runs:
         
         CONFIG_MAC80211_LEDS=m
 
+        # samsung ufs
+        CONFIG_UFS_SAMSUNG_FEATURE=n
+        CONFIG_SCSI_UFSF_FEATURE=n
+
         EOF
 
     - name: Add memkernel module
