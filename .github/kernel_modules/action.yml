@@ -165,6 +165,34 @@ runs:
 
         echo "UFS fixes applied successfully."
 
+    - name: Add dummy Samsung UFS hooks to avoid undefined linkage
+      shell: bash
+      run: |
+        set -euo pipefail
+        MSM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform/msm-kernel"
+        UFS_QCOM="$MSM/drivers/ufs/host/ufs-qcom.c"
+
+        echo "Patching $UFS_QCOM for missing Samsung UFS hooks..."
+        if grep -q "ufs_samsung_register_hooks" "$UFS_QCOM"; then
+          # Add stub definitions if not already present
+          if ! grep -q "static void ufs_samsung_register_hooks" "$UFS_QCOM"; then
+            echo "Adding ufs_samsung_register_hooks() stub..."
+            echo '
+#ifdef CONFIG_UFSS_FEATURE
+extern void ufs_samsung_register_hooks(void);
+extern void ufsf_set_init_state(struct ufs_hba *hba);
+#else
+static void ufs_samsung_register_hooks(void) { }
+static void ufsf_set_init_state(struct ufs_hba *hba) { }
+#endif
+' >> "$UFS_QCOM"
+          fi
+        else
+          echo "No Samsung UFS hook calls found; skipping patch."
+        fi
+        echo "Stub patch applied successfully."
+        
+
     - name: Add nethunter specfic drivers already present in kernel to be built as modules
       shell: bash
       run: |
