@@ -208,19 +208,32 @@ runs:
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
 
-    - name: Fix pinctrl-msm.c format specifiers
+    - name: Fix all format specifier errors
       shell: bash
       run: |
         set -euo pipefail
         KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
         MSM="$KERNEL_PLATFORM/msm-kernel"
     
-        # Fix both %lx to %llx for u64 type
-        sed -i 's/"The tile addr generated is 0x%lx\\n", (u64)tile_addr)/"The tile addr generated is 0x%llx\\n", (u64)tile_addr)/g' "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
+        echo "Fixing format specifier errors..."
     
-        # Verify the changes
-        echo "Fixed lines:"
-        grep -n "The tile addr generated is" "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
+        # Fix reset.c - line with %u for size_t
+        if [ -f "$MSM/arch/arm64/gunyah/reset.c" ]; then
+            sed -i 's/Invalid size for type PSCI_SYSTEM_RESET2: %u/Invalid size for type PSCI_SYSTEM_RESET2: %zu/' "$MSM/arch/arm64/gunyah/reset.c"
+            echo "Fixed reset.c"
+        fi
+    
+        # Fix pinctrl-msm.c - lines with %lx for u64  
+        if [ -f "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c" ]; then
+            sed -i 's/The tile addr generated is 0x%lx/The tile addr generated is 0x%llx/g' "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
+            echo "Fixed pinctrl-msm.c"
+        fi
+    
+        echo "Verification:"
+        echo "=== reset.c ==="
+        grep -n "Invalid size for type PSCI_SYSTEM_RESET2" "$MSM/arch/arm64/gunyah/reset.c" 2>/dev/null || echo "Line not found or already fixed"
+        echo "=== pinctrl-msm.c ==="
+        grep -n "The tile addr generated is" "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c" 2>/dev/null || echo "Line not found or already fixed"
         
     - name: Build Kernel Modules 
       shell: bash
