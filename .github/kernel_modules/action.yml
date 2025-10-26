@@ -208,19 +208,20 @@ runs:
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
 
-    - name: Fix format specifier in reset.c
+    - name: Fix pinctrl-msm.c format specifiers
       shell: bash
       run: |
         set -euo pipefail
         KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
         MSM="$KERNEL_PLATFORM/msm-kernel"
     
-        # Fix the format specifier from %u to %zu for size_t
-        sed -i 's/%u\\n",/%zu\\n",/g' "$MSM/arch/arm64/gunyah/reset.c"
+        # Fix both %lx to %llx for u64 type
+        sed -i 's/"The tile addr generated is 0x%lx\\n", (u64)tile_addr)/"The tile addr generated is 0x%llx\\n", (u64)tile_addr)/g' "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
     
-        # Verify the change
-        grep -n "Invalid size for type PSCI_SYSTEM_RESET2" "$MSM/arch/arm64/gunyah/reset.c"
-
+        # Verify the changes
+        echo "Fixed lines:"
+        grep -n "The tile addr generated is" "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
+        
     - name: Build Kernel Modules 
       shell: bash
       run: |
