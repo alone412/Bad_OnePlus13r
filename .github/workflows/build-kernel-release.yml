@@ -1,4 +1,4 @@
-name: Build and Release OnePlus 11 EmberHeart Kernel and Kernel Modules
+name: Build and Release OnePlus 13R Bad Kernel and Kernel Modules
 
 permissions:
   contents: write
@@ -30,9 +30,9 @@ on:
       kernel_uname:
         description: 'Kernel uname'
         type: string
-        default: 'EmberHeart'
-      android13-5_15_susfs_branch_or_commit:
-        description: 'Enter SusFS Branch or commit hash for android13-5.15'
+        default: 'Bad'
+      android14-6_1_susfs_branch_or_commit:
+        description: 'Enter SusFS Branch or commit hash for android14-6.1'
         type: string
         default: ''
 
@@ -78,7 +78,7 @@ jobs:
           done
           echo "]" >> matrix.json
         
-          input="OP11"
+          input="OP13r"
           jq_filter="."
           jq_filter="map(select(.model == \"$input\"))"
         
@@ -90,7 +90,7 @@ jobs:
           echo "MATRIX_EOF" >> "$GITHUB_OUTPUT"
 
   build-kernel:
-    name: Build OP11 EmberHeart kernel
+    name: Build OP13r Bad kernel
     needs: set-op-model
     runs-on: ubuntu-latest
     strategy:
@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           KERNEL_STRING="${{ matrix.android_version }}-${{ matrix.kernel_version }}"
-          SUSFS_BRANCH="${{ inputs.android13-5_15_susfs_branch_or_commit }}"
+          SUSFS_BRANCH="${{ inputs.android14-6_1_susfs_branch_or_commit }}"
       
           echo "susfs_branch=$SUSFS_BRANCH" >> $GITHUB_OUTPUT
 
