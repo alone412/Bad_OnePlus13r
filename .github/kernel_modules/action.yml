@@ -207,7 +207,6 @@ runs:
         git clone https://github.com/lwfinger/rtw88.git
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
-
     - name: Apply UFS driver fixes (stub for missing CONFIG_UFSS_FEATURE)
       shell: bash
       run: |
@@ -216,16 +215,16 @@ runs:
 
         # Patch for missing CONFIG_UFSS_FEATURE
         PATCH_FILE="$MSM/drivers/ufs/host/ufs-qcom-samsung-stub.c"
+        mkdir -p "$(dirname "$PATCH_FILE")"
         cat > "$PATCH_FILE" << 'EOF'
-#include <linux/phy/phy-qcom-ufs.h>
-
+       
 #ifndef CONFIG_UFSS_FEATURE
 static inline void ufs_samsung_register_hooks(void) { }
 static inline void ufsf_set_init_state(struct ufs_hba *hba) { }
 #endif
 EOF
 
-        echo "UFS stub patch applied successfully."
+    echo "UFS stub patch applied successfully."
 
     - name: Detect Clang (toolchain for build)
       shell: bash
