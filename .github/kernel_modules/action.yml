@@ -208,6 +208,19 @@ runs:
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
 
+    - name: Fix format specifier in reset.c
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PLATFORM/msm-kernel"
+    
+        # Fix the format specifier from %u to %zu for size_t
+        sed -i 's/%u\\n",/%zu\\n",/g' "$MSM/arch/arm64/gunyah/reset.c"
+    
+        # Verify the change
+        grep -n "Invalid size for type PSCI_SYSTEM_RESET2" "$MSM/arch/arm64/gunyah/reset.c"
+
     - name: Build Kernel Modules 
       shell: bash
       run: |
