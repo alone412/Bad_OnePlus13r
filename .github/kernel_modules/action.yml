@@ -208,13 +208,13 @@ runs:
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
 
-    - name: Apply UFS driver fixes
+    - name: Apply UFS driver fixes (stub for missing CONFIG_UFSS_FEATURE)
       shell: bash
       run: |
         set -euo pipefail
         MSM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform/msm-kernel"
 
-        # Add stub functions for missing CONFIG_UFSS_FEATURE
+        # Patch for missing CONFIG_UFSS_FEATURE
         PATCH_FILE="$MSM/drivers/ufs/host/ufs-qcom-samsung-stub.c"
         cat > "$PATCH_FILE" << 'EOF'
 #include <linux/phy/phy-qcom-ufs.h>
@@ -224,6 +224,8 @@ static inline void ufs_samsung_register_hooks(void) { }
 static inline void ufsf_set_init_state(struct ufs_hba *hba) { }
 #endif
 EOF
+
+        echo "UFS stub patch applied successfully."
 
     - name: Detect Clang (toolchain for build)
       shell: bash
