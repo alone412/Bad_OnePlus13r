@@ -216,18 +216,18 @@ runs:
         MSM="$KERNEL_PLATFORM/msm-kernel"
     
         # More reliable header insertion
-       HEADER_CODE='#ifdef CONFIG_UFS_SAMSUNG_FEATURE
-       #include <ufs-samsung.h>
-       #endif
-       #ifdef CONFIG_SCSI_UFSF_FEATURE  
-       #include <ufsf.h>
-       #endif'
+        HEADER_CODE='#ifdef CONFIG_UFS_SAMSUNG_FEATURE
+        #include <ufs-samsung.h>
+        #endif
+        #ifdef CONFIG_SCSI_UFSF_FEATURE  
+        #include <ufsf.h>
+        #endif'
     
-       # Insert after last #include in the file
-       awk '/^#include/ {print} END {print "\n'"$HEADER_CODE"'"} /^[^#]/ && !p {print "\n'"$HEADER_CODE"'"; p=1}' "$MSM/drivers/ufs/host/ufs-qcom.c" > /tmp/ufs-fixed.c
-       mv /tmp/ufs-fixed.c "$MSM/drivers/ufs/host/ufs-qcom.c"
+        # Insert after last #include in the file
+        awk '/^#include/ {print} END {print "\n'"$HEADER_CODE"'"} /^[^#]/ && !p {print "\n'"$HEADER_CODE"'"; p=1}' "$MSM/drivers/ufs/host/ufs-qcom.c" > /tmp/ufs-fixed.c
+        mv /tmp/ufs-fixed.c "$MSM/drivers/ufs/host/ufs-qcom.c"
     
-       echo "UFS headers added successfully"
+        echo "UFS headers added successfully"
         
     - name: Build Kernel Modules 
       shell: bash
