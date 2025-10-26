@@ -1,4 +1,4 @@
-name: Build OnePlus 11 EmberHeart Kernel
+name: Build OnePlus 13R Bad Kernel
 
 permissions:
   contents: write
@@ -24,7 +24,7 @@ inputs:
   kernel_uname:
     required: false
     type: string
-    default: "EmberHeart"
+    default: "Bad"
 
 outputs:
   kernel_version:
@@ -709,8 +709,8 @@ runs:
         echo -n "Repacking boot image..."
         $MAGISKBOOT repack $BOOT
         
-        mv -f new-boot.img EmberHeart_boot.img
-        cp EmberHeart_boot.img "$CONFIG_DIR/artifacts/"     
+        mv -f new-boot.img Bad_boot.img
+        cp Bad_boot.img "$CONFIG_DIR/artifacts/"     
 
     - name: Final Build Summary
       shell: bash
