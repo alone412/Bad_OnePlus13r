@@ -141,56 +141,6 @@ runs:
         rm -f msm-kernel/android/abi_gki_protected_exports_* || true
         df -h
 
-    - name: Apply UFS driver fixes (inline + prototype)
-      shell: bash
-      run: |
-        set -euo pipefail
-        MSM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform/msm-kernel"
-        
-        echo "Applying ufsfeature.c inline fix..."
-        # Remove 'inline' keyword from ufsf_set_init_state definition
-        sed -i 's/^inline void ufsf_set_init_state/void ufsf_set_init_state/' \
-          "$MSM/drivers/ufs/host/vendor/ufsfeature.c" || true
-
-        echo "Ensuring ufs_samsung_register_hooks prototype is visible..."
-        # If prototype is missing or misplaced, ensure it’s declared at the top
-        if ! grep -q "ufs_samsung_register_hooks" "$MSM/drivers/ufs/host/ufs-qcom.c"; then
-          echo "Warning: function not found, skipping prototype fix."
-        else
-          awk '
-            NR==1 {print "#include \"vendor/ufsfeature.h\""; print "static void ufs_samsung_register_hooks(void);"}
-            {print}
-          ' "$MSM/drivers/ufs/host/ufs-qcom.c" > "$MSM/drivers/ufs/host/ufs-qcom.tmp" && mv "$MSM/drivers/ufs/host/ufs-qcom.tmp" "$MSM/drivers/ufs/host/ufs-qcom.c"
-        fi
-
-        echo "UFS fixes applied successfully."
-
-    - name: Add dummy Samsung UFS hooks to avoid undefined linkage
-      shell: bash
-      run: |
-        set -euo pipefail
-        MSM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform/msm-kernel"
-        UFS_QCOM="$MSM/drivers/ufs/host/ufs-qcom.c"
-
-        echo "Patching $UFS_QCOM for missing Samsung UFS hooks..."
-        if grep -q "ufs_samsung_register_hooks" "$UFS_QCOM"; then
-          if ! grep -q "static void ufs_samsung_register_hooks" "$UFS_QCOM"; then
-            echo "Adding ufs_samsung_register_hooks() stub..."
-            cat <<'EOF' >> "$UFS_QCOM"
-#ifdef CONFIG_UFSS_FEATURE
-extern void ufs_samsung_register_hooks(void);
-extern void ufsf_set_init_state(struct ufs_hba *hba);
-#else
-static void ufs_samsung_register_hooks(void) { }
-static void ufsf_set_init_state(struct ufs_hba *hba) { }
-#endif
-EOF
-      fi
-    else
-      echo "No Samsung UFS hook calls found; skipping patch."
-    fi
-    echo "Stub patch applied successfully."
-
     - name: Add nethunter specfic drivers already present in kernel to be built as modules
       shell: bash
       run: |
