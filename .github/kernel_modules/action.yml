@@ -160,28 +160,28 @@ runs:
         CONFIG_ATH9K_HTC=m
         CONFIG_ATH9K_COMMON=m
 
-        #CONFIG_ATH10K=m
-        #CONFIG_ATH10K_USB=m
+        CONFIG_ATH10K=m
+        CONFIG_ATH10K_USB=m
 
-        #CONFIG_ATH11K=m
+        CONFIG_ATH11K=m
 
         CONFIG_WLAN_VENDOR_MEDIATEK=y
 
-        #CONFIG_MT7601U=m
-        #CONFIG_MT76_CORE=m
+        CONFIG_MT7601U=m
+        CONFIG_MT76_CORE=m
 
-        #CONFIG_MT76_CORE=m
-        #CONFIG_MT76_USB=m
-        #CONFIG_MT76x02_LIB=m
-        #CONFIG_MT76x02_USB=m
-        #CONFIG_MT76_CONNAC_LIB=m
+        CONFIG_MT76_CORE=m
+        CONFIG_MT76_USB=m
+        CONFIG_MT76x02_LIB=m
+        CONFIG_MT76x02_USB=m
+        CONFIG_MT76_CONNAC_LIB=m
 
-        #CONFIG_MT7603E=m
-        #CONFIG_MT76x2_COMMON=m
-        #CONFIG_MT76x0_COMMON=m
-        #CONFIG_MT7615_COMMON=m
-        #CONFIG_MT7915E=m
-        #CONFIG_MT7921E=m
+        CONFIG_MT7603E=m
+        CONFIG_MT76x2_COMMON=m
+        CONFIG_MT76x0_COMMON=m
+        CONFIG_MT7615_COMMON=m
+        CONFIG_MT7915E=m
+        CONFIG_MT7921E=m
         
         CONFIG_MAC80211_LEDS=m
 
@@ -207,6 +207,23 @@ runs:
         git clone https://github.com/lwfinger/rtw88.git
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
+
+    - name: Apply UFS driver fixes
+      shell: bash
+      run: |
+        set -euo pipefail
+        MSM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform/msm-kernel"
+
+        # Add stub functions for missing CONFIG_UFSS_FEATURE
+        PATCH_FILE="$MSM/drivers/ufs/host/ufs-qcom-samsung-stub.c"
+        cat > "$PATCH_FILE" << 'EOF'
+#include <linux/phy/phy-qcom-ufs.h>
+
+#ifndef CONFIG_UFSS_FEATURE
+static inline void ufs_samsung_register_hooks(void) { }
+static inline void ufsf_set_init_state(struct ufs_hba *hba) { }
+#endif
+EOF
 
     - name: Detect Clang (toolchain for build)
       shell: bash
