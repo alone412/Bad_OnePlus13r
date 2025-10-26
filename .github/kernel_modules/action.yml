@@ -185,10 +185,6 @@ runs:
         
         CONFIG_MAC80211_LEDS=m
 
-        # samsung ufs
-        CONFIG_UFS_SAMSUNG_FEATURE=n
-        CONFIG_SCSI_UFSF_FEATURE=n
-
         EOF
 
     - name: Add memkernel module
@@ -211,6 +207,27 @@ runs:
         git clone https://github.com/lwfinger/rtw88.git
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
+
+    - name: Add UFS headers properly
+      shell: bash
+      run: |
+        set -euo pipefail
+        KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
+        MSM="$KERNEL_PLATFORM/msm-kernel"
+    
+        # More reliable header insertion
+       HEADER_CODE='#ifdef CONFIG_UFS_SAMSUNG_FEATURE
+       #include <ufs-samsung.h>
+       #endif
+       #ifdef CONFIG_SCSI_UFSF_FEATURE  
+       #include <ufsf.h>
+       #endif'
+    
+       # Insert after last #include in the file
+       awk '/^#include/ {print} END {print "\n'"$HEADER_CODE"'"} /^[^#]/ && !p {print "\n'"$HEADER_CODE"'"; p=1}' "$MSM/drivers/ufs/host/ufs-qcom.c" > /tmp/ufs-fixed.c
+       mv /tmp/ufs-fixed.c "$MSM/drivers/ufs/host/ufs-qcom.c"
+    
+       echo "UFS headers added successfully"
         
     - name: Build Kernel Modules 
       shell: bash
