@@ -189,7 +189,7 @@ EOF
     else
       echo "No Samsung UFS hook calls found; skipping patch."
     fi
-    echo "Stub patch applied successfully."   
+    echo "Stub patch applied successfully."
 
     - name: Add nethunter specfic drivers already present in kernel to be built as modules
       shell: bash
