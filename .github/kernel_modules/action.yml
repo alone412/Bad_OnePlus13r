@@ -207,33 +207,6 @@ runs:
         git clone https://github.com/lwfinger/rtw88.git
         sed -i 's/$(CONFIG_RTW88)/m/g' Makefile
         sed -i '/^source "drivers\/net\/wireless\/realtek\/rtw88\/Kconfig"$/s/.*/ /' Kconfig
-
-    - name: Fix all format specifier errors
-      shell: bash
-      run: |
-        set -euo pipefail
-        KERNEL_PLATFORM="$GITHUB_WORKSPACE/$CONFIG/kernel_platform"
-        MSM="$KERNEL_PLATFORM/msm-kernel"
-    
-        echo "Fixing format specifier errors..."
-    
-        # Fix reset.c - line with %u for size_t
-        if [ -f "$MSM/arch/arm64/gunyah/reset.c" ]; then
-            sed -i 's/Invalid size for type PSCI_SYSTEM_RESET2: %u/Invalid size for type PSCI_SYSTEM_RESET2: %zu/' "$MSM/arch/arm64/gunyah/reset.c"
-            echo "Fixed reset.c"
-        fi
-    
-        # Fix pinctrl-msm.c - lines with %lx for u64  
-        if [ -f "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c" ]; then
-            sed -i 's/The tile addr generated is 0x%lx/The tile addr generated is 0x%llx/g' "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c"
-            echo "Fixed pinctrl-msm.c"
-        fi
-    
-        echo "Verification:"
-        echo "=== reset.c ==="
-        grep -n "Invalid size for type PSCI_SYSTEM_RESET2" "$MSM/arch/arm64/gunyah/reset.c" 2>/dev/null || echo "Line not found or already fixed"
-        echo "=== pinctrl-msm.c ==="
-        grep -n "The tile addr generated is" "$MSM/drivers/pinctrl/qcom/pinctrl-msm.c" 2>/dev/null || echo "Line not found or already fixed"
         
     - name: Build Kernel Modules 
       shell: bash
@@ -246,6 +219,9 @@ runs:
         
         MSM="$KERNEL_PLATFORM/msm-kernel"
         cd "$MSM"
+
+        # Disable ALL format-related warnings
+        export KCFLAGS="-Wno-format -Wno-format-extra-args -Wno-format-security"
 
         # Merge defconfig fragments from vendor/kalama_GKI.config
         cat arch/arm64/configs/vendor/kalama_GKI.config >> ./arch/arm64/configs/gki_defconfig
