@@ -174,10 +174,9 @@ runs:
 
         echo "Patching $UFS_QCOM for missing Samsung UFS hooks..."
         if grep -q "ufs_samsung_register_hooks" "$UFS_QCOM"; then
-          # Add stub definitions if not already present
           if ! grep -q "static void ufs_samsung_register_hooks" "$UFS_QCOM"; then
             echo "Adding ufs_samsung_register_hooks() stub..."
-            echo '
+            cat <<'EOF' >> "$UFS_QCOM"
 #ifdef CONFIG_UFSS_FEATURE
 extern void ufs_samsung_register_hooks(void);
 extern void ufsf_set_init_state(struct ufs_hba *hba);
@@ -185,13 +184,12 @@ extern void ufsf_set_init_state(struct ufs_hba *hba);
 static void ufs_samsung_register_hooks(void) { }
 static void ufsf_set_init_state(struct ufs_hba *hba) { }
 #endif
-' >> "$UFS_QCOM"
-          fi
-        else
-          echo "No Samsung UFS hook calls found; skipping patch."
-        fi
-        echo "Stub patch applied successfully."
-        
+EOF
+      fi
+    else
+      echo "No Samsung UFS hook calls found; skipping patch."
+    fi
+    echo "Stub patch applied successfully."   
 
     - name: Add nethunter specfic drivers already present in kernel to be built as modules
       shell: bash
